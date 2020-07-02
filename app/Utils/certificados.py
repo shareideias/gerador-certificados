@@ -2,6 +2,7 @@ import os
 import sys
 
 import postgresql
+
 from shutil import copyfile
 from shutil import copytree
 from shutil import make_archive
@@ -40,7 +41,7 @@ def main():
 
         #Cria a cópia do modelo sem o xml base
         copytree(pathBase, pathCopia)
-        os.remove(pathCopia + "/content.xml")
+        os.remove(pathCopia + "/word/document.xml")
 
         #Repete para todos os alunos
         for row in query:
@@ -64,14 +65,14 @@ def main():
 
 # Deve pegar editar o modelo em memória e colocar no padrão, zipar e excluir o xml
 def geraCertificado(aluno, pathCopia):
-    pathXML = os.path.dirname(__file__) + "/base/alunoXML/content.xml"
-    pathNovo = os.path.dirname(__file__) + "/certificados/{0}.odt".format(aluno.nome)
+    pathXML = os.path.dirname(__file__) + "/base/alunoXML/word/document.xml"
+    pathNovo = os.path.dirname(__file__) + "/certificados/{0}.docx".format(aluno.nome)
 
     #Chama o redactor para personalizar
     redactor(aluno, pathXML, pathCopia, pathNovo)
 
     #Remove o xml personalizado
-    os.remove(pathCopia + "/content.xml")
+    os.remove(pathCopia + "/word/document.xml")
 
 if __name__ == "__main__":
     main()
