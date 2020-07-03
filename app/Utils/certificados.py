@@ -8,7 +8,9 @@ from shutil import copytree
 from shutil import make_archive
 from shutil import rmtree
 from shutil import move
+
 from docx import Document
+from docx2pdf import convert
 
 from Participante import Participante
 
@@ -59,6 +61,7 @@ def main():
 
 # Deve pegar editar o modelo em memória e colocar no padrão, zipar e excluir o xml
 def geraCertificado(aluno, pathBase):
+    #DOCX
     pathNovo = os.path.dirname(__file__) + "/certificados/{0}.docx".format(aluno.nome)
     document = Document(pathBase)
 
@@ -71,6 +74,9 @@ def geraCertificado(aluno, pathBase):
 
     document.save(pathNovo)
 
+    #PDF
+    convert(pathNovo)
+    os.remove(pathNovo)
 
 if __name__ == "__main__":
     main()
