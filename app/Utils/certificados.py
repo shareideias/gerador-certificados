@@ -2,14 +2,17 @@ import os
 import sys
 
 import postgresql
+
 from shutil import copyfile
 from shutil import copytree
 from shutil import make_archive
 from shutil import rmtree
 from shutil import move
 
+from docx import Document
+from docx2pdf import convert
+
 from Participante import Participante
-from redactor import redactor 
 
 def main():
     try:
@@ -29,27 +32,21 @@ def main():
 
     certPath = os.path.dirname(__file__) + "/certificados"
     zipPath = os.path.dirname(__file__) + '/Certificados'
-    pathBase = os.path.dirname(__file__) + "/base/alunoXML"
-    pathCopia = certPath + "/baseXML"
+    pathBase = os.path.dirname(__file__) + "/base/aluno.docx"
+    pathCopia = certPath + "/aluno.docx"
     public = os.path.dirname(__file__) + "/../../public"
 
     #Tenta realizar
     try:
         #Cria o diretório dos certificados
+        rmtree(certPath, ignore_errors=True)
         os.mkdir(certPath)
-
-        #Cria a cópia do modelo sem o xml base
-        copytree(pathBase, pathCopia)
-        os.remove(pathCopia + "/content.xml")
 
         #Repete para todos os alunos
         for row in query:
             aluno = Participante(row)
             #Gera o certificado de cada aluno
-            geraCertificado(aluno, pathCopia)
-        
-        #Remove a cópia do modelo
-        rmtree(pathCopia, ignore_errors=True)
+            geraCertificado(aluno, pathBase)
 
         #Zipa todos
         make_archive(zipPath, 'zip', certPath)
@@ -63,15 +60,23 @@ def main():
         pass
 
 # Deve pegar editar o modelo em memória e colocar no padrão, zipar e excluir o xml
-def geraCertificado(aluno, pathCopia):
-    pathXML = os.path.dirname(__file__) + "/base/alunoXML/content.xml"
-    pathNovo = os.path.dirname(__file__) + "/certificados/{0}.odt".format(aluno.nome)
+def geraCertificado(aluno, pathBase):
+    #DOCX
+    pathNovo = os.path.dirname(__file__) + "/certificados/{0}.docx".format(aluno.nome)
+    document = Document(pathBase)
 
-    #Chama o redactor para personalizar
-    redactor(aluno, pathXML, pathCopia, pathNovo)
+    textos_ini = document.paragraphs[0].runs
+    textos_data = document.paragraphs[5].runs
+    idx = [8, 12, 14]
+    for i in idx:
+        textos_ini[i].text = textos_ini[i].text.replace("(NOME)", aluno.nome.upper()).replace("(CURSO)", aluno.curso.upper()).replace("(SEMESTRE)", aluno.getSemestre().upper()).replace("(ANO)", str(aluno.data_inscricao.year)).replace("(ANOC)", str(aluno.data_certificado.year)).replace("(MES)", aluno.getMes().upper()).replace("(DIA)", str(aluno.data_certificado.day))
+    textos_data[0].text = textos_data[0].text.replace("(NOME)", aluno.nome.upper()).replace("(CURSO)", aluno.curso.upper()).replace("(SEMESTRE)", aluno.getSemestre().upper()).replace("(ANO)", str(aluno.data_inscricao.year)).replace("(ANOC)", str(aluno.data_certificado.year)).replace("(MES)", aluno.getMes().upper()).replace("(DIA)", str(aluno.data_certificado.day))
 
-    #Remove o xml personalizado
-    os.remove(pathCopia + "/content.xml")
+    document.save(pathNovo)
+
+    #PDF
+    convert(pathNovo)
+    os.remove(pathNovo)
 
 if __name__ == "__main__":
     main()
